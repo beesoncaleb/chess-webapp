@@ -12,6 +12,10 @@ const startingBoard = ref<ChessBoard>([
   ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
   ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
 ]);
+
+const FENString = computed(
+  () => gameToFEN(startingBoard.value, 0, [], 'w')
+)
 </script>
 
 <template>
@@ -20,4 +24,7 @@ const startingBoard = ref<ChessBoard>([
       <ChessBoard :board="startingBoard"/>
     </div>
   </div>
+  <p class="m-16 text-lg text-white">
+    FEN string: {{FENString}}
+  </p>
 </template>
