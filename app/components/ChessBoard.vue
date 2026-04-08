@@ -16,21 +16,65 @@ const FENtoSVG: Record<string, string> = {
 </script>
 
 <script setup lang="ts">
-import type { ChessBoard, FlatChessBoard, ChessPiece} from "types/Chess";
+import type { ChessBoard, FlatChessBoard, ChessPiece, BoardPiece } from "types/Chess";
 
-const props = defineProps<{
-  board: ChessBoard
-}>();
+// starting board
+const board = ref<ChessBoard>([
+  ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+  ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+  [null, null, null, null, null, null, null, null], 
+  [null, null, null, null, null, null, null, null], 
+  [null, null, null, null, null, null, null, null], 
+  [null, null, null, null, null, null, null, null], 
+  ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+  ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+]);
 
 const flatBoard = computed<FlatChessBoard>(
-  () => flattenChessBoard(props.board)
+  () => flattenChessBoard(board.value)
 );
+
+const selectedSquare = ref<number | null>(null)
+
+// Handle piece selection and moves, no move validation or capturing yet
+function handleSelection(flatIndex: number, event: MouseEvent) {
+  // If no square selected or current square is empty, then update current selection
+  if (!selectedSquare.value || !flatBoard.value[selectedSquare.value]) {
+    selectedSquare.value = flatIndex;
+  }
+  else {
+    const piece: BoardPiece = flatBoard.value[selectedSquare.value];
+
+    const currentCol = selectedSquare.value % 8;
+    const currentRow = Math.floor(selectedSquare.value / 8);
+
+    const targetCol = flatIndex % 8;
+    const targetRow = Math.floor(flatIndex / 8);
+
+    board.value[currentRow][currentCol] = null;
+    board.value[targetRow][targetCol] = piece;
+
+    selectedSquare.value = null;
+  }
+}
 
 function isDark(i) {
   const row = Math.floor(i / 8);
   const col = i % 8;
   return (row + col) % 2 !== 0;
 };
+
+function handleKeyDown(event: KeyboardEvent) {
+  switch (event.key) {
+    case 'Escape':
+      selectedSquare.value = null;
+      break;
+  }
+}
+
+// Deselect pieces with escape key
+onMounted(() => window.addEventListener('keydown', handleKeyDown));
+onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 </script>
 
 <template>
@@ -38,13 +82,16 @@ function isDark(i) {
     <div 
       v-for="(square, i) in flatBoard" 
       :key="i"
+      @click.self="handleSelection(i, $event)"
       :class="[
         'relative flex items-center justify-center select-none aspect-square',
-        isDark(i) ? 'bg-yellow-800' : 'bg-orange-200'
+        isDark(i) ? 'bg-yellow-800' : 'bg-orange-200',
+        selectedSquare === i ? 'ring-3 ring-inset ring-slate-500/80' : ''
       ]"
     >
       <img
         v-if="square"
+        @click.self="handleSelection(i, $event)"
         :src="FENtoSVG[square]"
         class="w-7/8 h-7/8 object-contain"
       />
